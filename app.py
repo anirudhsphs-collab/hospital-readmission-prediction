@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from typing import Literal
+from uuid import uuid4
 from pathlib import Path
 import pandas as pd
 import joblib
@@ -16,6 +18,7 @@ from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER
 from xml.sax.saxutils import escape
+
 
 app = FastAPI(
     title="Hospital Readmission Prediction API",
@@ -439,3 +442,65 @@ def download_report(request: PredictionRequest):
                 'attachment; filename="readmission_report.pdf"'
         }
     )
+    # FEATURE 4: POST-DISCHARGE MEDICATION SCHEDULE
+
+# Temporary storage for demonstration
+medication_schedules = {}
+
+
+class MedicationSchedule(BaseModel):
+    medicine_name: str = Field(min_length=1)
+    prescribed_dose: str = Field(min_length=1)
+    scheduled_time: str = Field(
+        pattern=r"^([01]\d|2[0-3]):[0-5]\d$"
+    )
+    instructions: str = ""
+    status: Literal["Pending", "Taken", "Missed"] = "Pending"
+
+
+class MedicationStatusUpdate(BaseModel):
+    status: Literal["Pending", "Taken", "Missed"]
+
+
+@app.post("/medications")
+def add_medication(medication: MedicationSchedule):
+    medication_id = str(uuid4())
+
+    record = {
+        "id": medication_id,
+        **medication.model_dump()
+    }
+
+    medication_schedules[medication_id] = record
+
+    return {
+        "message": "Medication schedule added successfully",
+        "medication": record
+    }
+
+
+@app.get("/medications")
+def get_medications():
+    return {
+        "total_medications": len(medication_schedules),
+        "medications": list(medication_schedules.values())
+    }
+
+
+@app.patch("/medications/{medication_id}")
+def update_medication_status(
+    medication_id: str,
+    update: MedicationStatusUpdate
+):
+    if medication_id not in medication_schedules:
+        raise HTTPException(
+            status_code=404,
+            detail="Medication schedule not found"
+        )
+
+    medication_schedules[medication_id]["status"] = update.status
+
+    return {
+        "message": "Medication status updated successfully",
+        "medication": medication_schedules[medication_id]
+    }
