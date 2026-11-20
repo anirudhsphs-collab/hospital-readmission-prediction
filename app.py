@@ -6,6 +6,16 @@ import pandas as pd
 import joblib
 import numpy as np
 import shap
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+from datetime import datetime, timezone
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+)
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
+from xml.sax.saxutils import escape
 
 app = FastAPI(
     title="Hospital Readmission Prediction API",
@@ -261,3 +271,171 @@ def explain_prediction(request: PredictionRequest):
             status_code=400,
             detail=str(error)
         )
+        # FEATURE 2: RISK DASHBOARD
+@app.post("/risk-dashboard")
+def risk_dashboard(request: PredictionRequest):
+
+    prediction_data = predict_readmission(request)
+    probability = prediction_data["early_readmission_probability"]
+
+    # Illustrative categories, not clinically validated thresholds
+    if probability < 30:
+        risk_level = "Low"
+        risk_color = "green"
+    elif probability < 60:
+        risk_level = "Moderate"
+        risk_color = "orange"
+    else:
+        risk_level = "High"
+        risk_color = "red"
+
+    return {
+        "model": "Tuned Random Forest",
+        "prediction": prediction_data["prediction"],
+        "result": prediction_data["result"],
+        "risk_percentage": probability,
+        "risk_level": risk_level,
+        "risk_color": risk_color,
+        "gauge_value": probability,
+        "disclaimer": (
+            "Risk categories are illustrative and are not "
+            "clinically validated."
+        )
+    }
+
+
+# FEATURE 3: DOWNLOADABLE PDF REPORT
+@app.post("/download-report")
+def download_report(request: PredictionRequest):
+
+    prediction_data = predict_readmission(request)
+    probability = prediction_data["early_readmission_probability"]
+
+    if probability < 30:
+        risk_level = "Low"
+    elif probability < 60:
+        risk_level = "Moderate"
+    else:
+        risk_level = "High"
+
+    buffer = BytesIO()
+
+    document = SimpleDocTemplate(
+        buffer,
+        pagesize=(595, 842),
+        rightMargin=45,
+        leftMargin=45,
+        topMargin=45,
+        bottomMargin=45
+    )
+
+    styles = getSampleStyleSheet()
+    elements = []
+
+    title = Paragraph(
+        "Hospital Readmission Prediction Report",
+        styles["Title"]
+    )
+    elements.append(title)
+    elements.append(Spacer(1, 15))
+
+    generated_at = datetime.now(timezone.utc).strftime(
+        "%d %B %Y, %H:%M UTC"
+    )
+
+    elements.append(
+        Paragraph(
+            f"Generated: {generated_at}",
+            styles["Normal"]
+        )
+    )
+
+    elements.append(Spacer(1, 20))
+
+    summary = [
+        ["Prediction Summary", "Result"],
+        ["Model", "Tuned Random Forest"],
+        ["Prediction", prediction_data["result"]],
+        ["Readmission Probability", f"{probability}%"],
+        ["Illustrative Risk Level", risk_level]
+    ]
+
+    summary_table = Table(
+        summary,
+        colWidths=[190, 315],
+        repeatRows=1
+    )
+
+    summary_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#174a78")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+            ("TOPPADDING", (0, 0), (-1, -1), 10)
+        ])
+    )
+
+    elements.append(summary_table)
+    elements.append(Spacer(1, 22))
+
+    elements.append(
+        Paragraph("Patient Input Features", styles["Heading2"])
+    )
+
+    elements.append(Spacer(1, 10))
+
+    feature_rows = [["Feature", "Value"]]
+
+    for feature in FEATURES:
+        value = request.features[feature]
+
+        feature_rows.append([
+            Paragraph(escape(str(feature)), styles["BodyText"]),
+            Paragraph(escape(str(value)), styles["BodyText"])
+        ])
+
+    feature_table = Table(
+        feature_rows,
+        colWidths=[245, 260],
+        repeatRows=1,
+        hAlign="LEFT"
+    )
+
+    feature_table.setStyle(
+        TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#174a78")),
+            ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+            ("TOPPADDING", (0, 0), (-1, -1), 7),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 7)
+        ])
+    )
+
+    elements.append(feature_table)
+    elements.append(Spacer(1, 20))
+
+    elements.append(
+        Paragraph(
+            "Disclaimer: This report is for academic and "
+            "educational purposes only. The model and risk "
+            "categories have not been clinically validated "
+            "for patient care.",
+            styles["BodyText"]
+        )
+    )
+
+    document.build(elements)
+
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition":
+                'attachment; filename="readmission_report.pdf"'
+        }
+    )
