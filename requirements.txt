@@ -6,3 +6,4 @@ scikit-learn==1.7.2
 joblib
 numpy
 shap==0.54.1
+reportlab==4.4.4
