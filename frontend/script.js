@@ -1,4 +1,3 @@
-
 const form = document.getElementById("predictionForm");
 const resultDiv = document.getElementById("result");
 const predictButton = document.getElementById("predictButton");
@@ -110,7 +109,7 @@ form.addEventListener("submit", async function(event) {
                 features: features
             })
         });
-
+console.log("Prediction request features:", features);
         const data = await response.json();
 
         if (!response.ok) {
@@ -129,6 +128,60 @@ form.addEventListener("submit", async function(event) {
             <p>Estimated probability: <strong>${data.early_readmission_probability}%</strong></p>
             <p>Model: ${data.model}</p>
         `;
+        // Get SHAP explanation
+        try {
+            const explainResponse = await fetch(
+                "http://127.0.0.1:8000/explain",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ features: features })
+                }
+            );
+
+            if (!explainResponse.ok) {
+                throw new Error("SHAP request failed");
+            }
+
+            const explanation = await explainResponse.json();
+
+            const shapSection = document.createElement("div");
+            shapSection.className = "shap-section";
+
+            const heading = document.createElement("h3");
+            heading.textContent = "AI Explanation - Top Influencing Features";
+            shapSection.appendChild(heading);
+
+            explanation.top_features.forEach(function(item) {
+                const row = document.createElement("p");
+
+                const direction = item.shap_value > 0
+                    ? "Increases predicted risk"
+                    : item.shap_value < 0
+                        ? "Decreases predicted risk"
+                        : "No contribution";
+
+                row.textContent =
+                    item.feature + ": " +
+                    direction + " (" +
+                    Number(item.shap_value).toFixed(4) + ")";
+
+                shapSection.appendChild(row);
+            });
+
+            resultDiv.appendChild(shapSection);
+
+        } catch (explainError) {
+            console.error("SHAP error:", explainError);
+
+            const message = document.createElement("p");
+            message.textContent =
+                "AI explanation is temporarily unavailable.";
+
+            resultDiv.appendChild(message);
+        }
 
     } catch (error) {
         resultDiv.className = "error";
