@@ -131,7 +131,7 @@ console.log("Prediction request features:", features);
         // Get SHAP explanation
         try {
             const explainResponse = await fetch(
-                "http://127.0.0.1:8000/explain",
+                "https://hospital-readmission-prediction-5ruq.onrender.com/explain",
                 {
                     method: "POST",
                     headers: {
