@@ -1,23 +1,27 @@
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
-from typing import Literal
-from uuid import uuid4
+from pydantic import BaseModel
 from pathlib import Path
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+from datetime import datetime, timezone
+from xml.sax.saxutils import escape
+
 import pandas as pd
 import joblib
 import numpy as np
 import shap
-from fastapi.responses import StreamingResponse
-from io import BytesIO
-from datetime import datetime, timezone
+
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle
 )
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.enums import TA_CENTER
-from xml.sax.saxutils import escape
 
 
 app = FastAPI(
@@ -46,7 +50,6 @@ if not MODEL_PATH.exists():
     )
 
 model = joblib.load(MODEL_PATH)
-
 FEATURES = list(model.feature_names_in_)
 
 
@@ -82,7 +85,6 @@ def get_features():
 
 @app.post("/predict")
 def predict_readmission(request: PredictionRequest):
-
     input_data = request.features
 
     missing_features = [
@@ -120,14 +122,9 @@ def predict_readmission(request: PredictionRequest):
         )
 
         prediction = int(model.predict(input_df)[0])
-
         probabilities = model.predict_proba(input_df)[0]
-
         positive_index = list(model.classes_).index(1)
-
-        probability = float(
-            probabilities[positive_index]
-        )
+        probability = float(probabilities[positive_index])
 
         return {
             "prediction": prediction,
@@ -147,6 +144,8 @@ def predict_readmission(request: PredictionRequest):
             status_code=400,
             detail=str(error)
         )
+
+
 @app.post("/explain")
 def explain_prediction(request: PredictionRequest):
     input_data = request.features
@@ -171,30 +170,24 @@ def explain_prediction(request: PredictionRequest):
         )
 
     try:
-        # Convert input into the model's expected format
         input_df = pd.DataFrame(
             [[input_data[feature] for feature in FEATURES]],
             columns=FEATURES
         )
 
-        # Separate preprocessing and Random Forest
         preprocessor = model.named_steps["preprocessor"]
         classifier = model.named_steps["classifier"]
 
-        # Apply the same preprocessing used during training
         transformed_data = preprocessor.transform(input_df)
 
         if hasattr(transformed_data, "toarray"):
             transformed_data = transformed_data.toarray()
 
-        # Retrieve names of encoded features
         transformed_names = preprocessor.get_feature_names_out()
 
-        # Calculate SHAP values
         explainer = shap.TreeExplainer(classifier)
         shap_values = explainer.shap_values(transformed_data)
 
-        # Select the readmission class (class 1)
         positive_index = list(classifier.classes_).index(1)
 
         if isinstance(shap_values, list):
@@ -207,7 +200,6 @@ def explain_prediction(request: PredictionRequest):
             else:
                 contributions = values[0]
 
-        # Combine encoded features back into original feature groups
         grouped_contributions = {
             feature: 0.0 for feature in FEATURES
         }
@@ -274,14 +266,16 @@ def explain_prediction(request: PredictionRequest):
             status_code=400,
             detail=str(error)
         )
-        # FEATURE 2: RISK DASHBOARD
+
+
+# FEATURE 2: RISK DASHBOARD
+
 @app.post("/risk-dashboard")
 def risk_dashboard(request: PredictionRequest):
-
     prediction_data = predict_readmission(request)
     probability = prediction_data["early_readmission_probability"]
 
-    # Illustrative categories, not clinically validated thresholds
+    # Illustrative thresholds, not clinically validated
     if probability < 30:
         risk_level = "Low"
         risk_color = "green"
@@ -308,9 +302,9 @@ def risk_dashboard(request: PredictionRequest):
 
 
 # FEATURE 3: DOWNLOADABLE PDF REPORT
+
 @app.post("/download-report")
 def download_report(request: PredictionRequest):
-
     prediction_data = predict_readmission(request)
     probability = prediction_data["early_readmission_probability"]
 
@@ -386,7 +380,6 @@ def download_report(request: PredictionRequest):
     elements.append(
         Paragraph("Patient Input Features", styles["Heading2"])
     )
-
     elements.append(Spacer(1, 10))
 
     feature_rows = [["Feature", "Value"]]
@@ -431,7 +424,6 @@ def download_report(request: PredictionRequest):
     )
 
     document.build(elements)
-
     buffer.seek(0)
 
     return StreamingResponse(
@@ -442,65 +434,3 @@ def download_report(request: PredictionRequest):
                 'attachment; filename="readmission_report.pdf"'
         }
     )
-    # FEATURE 4: POST-DISCHARGE MEDICATION SCHEDULE
-
-# Temporary storage for demonstration
-medication_schedules = {}
-
-
-class MedicationSchedule(BaseModel):
-    medicine_name: str = Field(min_length=1)
-    prescribed_dose: str = Field(min_length=1)
-    scheduled_time: str = Field(
-        pattern=r"^([01]\d|2[0-3]):[0-5]\d$"
-    )
-    instructions: str = ""
-    status: Literal["Pending", "Taken", "Missed"] = "Pending"
-
-
-class MedicationStatusUpdate(BaseModel):
-    status: Literal["Pending", "Taken", "Missed"]
-
-
-@app.post("/medications")
-def add_medication(medication: MedicationSchedule):
-    medication_id = str(uuid4())
-
-    record = {
-        "id": medication_id,
-        **medication.model_dump()
-    }
-
-    medication_schedules[medication_id] = record
-
-    return {
-        "message": "Medication schedule added successfully",
-        "medication": record
-    }
-
-
-@app.get("/medications")
-def get_medications():
-    return {
-        "total_medications": len(medication_schedules),
-        "medications": list(medication_schedules.values())
-    }
-
-
-@app.patch("/medications/{medication_id}")
-def update_medication_status(
-    medication_id: str,
-    update: MedicationStatusUpdate
-):
-    if medication_id not in medication_schedules:
-        raise HTTPException(
-            status_code=404,
-            detail="Medication schedule not found"
-        )
-
-    medication_schedules[medication_id]["status"] = update.status
-
-    return {
-        "message": "Medication status updated successfully",
-        "medication": medication_schedules[medication_id]
-    }
