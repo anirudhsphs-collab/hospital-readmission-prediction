@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReAdmit Care | Model Information</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<main class="main-content">
+
+    <div class="topbar">
+        <span>Machine Learning Information</span>
+        <span class="tag">Model Transparency</span>
+    </div>
+
+    <h1>About Our Prediction Model</h1>
+
+    <p class="subtitle">
+        Understanding the technology behind ReAdmit Care.
+    </p>
+
+    <div class="card-grid three">
+
+        <div class="card metric">
+            <h2>101,766</h2>
+            <p>Original Dataset Records</p>
+        </div>
+
+        <div class="card metric">
+            <h2>47</h2>
+            <p>Model Input Features</p>
+        </div>
+
+        <div class="card metric">
+            <h2>30 Days</h2>
+            <p>Early Readmission Window</p>
+        </div>
+
+    </div>
+
+    <section class="card">
+
+        <h2>Tuned Random Forest</h2>
+
+        <p>
+            Random Forest is an ensemble machine learning algorithm
+            that combines multiple decision trees to generate
+            classification predictions.
+        </p>
+
+        <p>
+            The trained model processes patient demographics,
+            hospital admission information, previous hospital
+            visits, diagnosis information and medication details.
+        </p>
+
+    </section>
+
+    <section class="card">
+
+        <h2>Dataset Information</h2>
+
+        <p>
+            The project uses the Diabetes 130-US Hospitals
+            dataset covering hospital encounters from 1999 to 2008.
+        </p>
+
+        <p>
+            The dataset includes demographic information,
+            hospital stay details, laboratory procedures,
+            diagnoses and diabetes medications.
+        </p>
+
+        <a class="text-link"
+           href="https://archive.ics.uci.edu/dataset/296/diabetes+130-us+hospitals+for+years+1999-2008"
+           target="_blank" rel="noopener noreferrer">
+            View Dataset Source →
+        </a>
+
+    </section>
+
+    <section class="card">
+
+        <h2>Prediction Workflow</h2>
+
+        <div class="workflow">
+
+            <div>Patient Input</div>
+            <span>↓</span>
+
+            <div>Data Preprocessing</div>
+            <span>↓</span>
+
+            <div>Tuned Random Forest</div>
+            <span>↓</span>
+
+            <div>Readmission Probability</div>
+            <span>↓</span>
+
+            <div>SHAP Explanation</div>
+            <span>↓</span>
+
+            <div>Assessment Report</div>
+
+        </div>
+
+    </section>
+
+    <section class="card">
+
+        <h2>Explainable Machine Learning</h2>
+
+        <p>
+            SHAP identifies how individual input features
+            contribute to a model prediction.
+        </p>
+
+        <p>
+            Positive contributions increase the predicted
+            readmission score, while negative contributions
+            decrease it.
+        </p>
+
+        <div class="notice">
+            SHAP contributions explain model behavior.
+            They do not establish medical causation.
+            The system has not been clinically validated.
+        </div>
+
+    </section>
+
+    <footer>ReAdmit Care | Model Transparency</footer>
+
+</main>
+
+<script src="script.js" type="module"></script>
+
+</body>
+</html>

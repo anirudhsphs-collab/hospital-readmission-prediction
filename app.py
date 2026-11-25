@@ -1,6 +1,7 @@
 import os
 import logging
 
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -82,7 +83,6 @@ security = HTTPBearer(auto_error=False)
 # GOOGLE AUTHENTICATION VERIFICATION
 # ==========================================
 
-
 def verify_google_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
@@ -146,7 +146,6 @@ def verify_google_user(
     return decoded_token
 
 
-
 # ==========================================
 # LOAD TRAINED MACHINE LEARNING MODEL
 # ==========================================
@@ -184,19 +183,13 @@ class PredictionRequest(BaseModel):
 def validate_features(input_data):
 
     missing_features = [
-
         feature for feature in FEATURES
-
         if feature not in input_data
-
     ]
 
     extra_features = [
-
         feature for feature in input_data
-
         if feature not in FEATURES
-
     ]
 
     if missing_features or extra_features:
@@ -211,32 +204,9 @@ def validate_features(input_data):
         )
 
     return pd.DataFrame(
-
         [[input_data[feature] for feature in FEATURES]],
-
         columns=FEATURES
-
     )
-
-
-# ==========================================
-# HOME ENDPOINT
-# ==========================================
-
-@app.get("/")
-def home():
-
-    return {
-
-        "project": "ReAdmit Care",
-
-        "status": "API Running Successfully",
-
-        "model": "Tuned Random Forest",
-
-        "authentication": "Firebase Google Sign-In"
-
-    }
 
 
 # ==========================================
@@ -247,15 +217,10 @@ def home():
 def health_check():
 
     return {
-
         "status": "healthy",
-
         "model_loaded": True,
-
         "total_features": len(FEATURES),
-
         "authentication_required": True
-
     }
 
 
@@ -267,11 +232,8 @@ def health_check():
 def get_features():
 
     return {
-
         "total_features": len(FEATURES),
-
         "features": FEATURES
-
     }
 
 
@@ -285,13 +247,9 @@ def verify_authentication(
 ):
 
     return {
-
         "authenticated": True,
-
         "provider": "Google",
-
         "email_verified": True
-
     }
 
 
@@ -330,13 +288,9 @@ def predict_readmission(request: PredictionRequest):
             "prediction": prediction,
 
             "result": (
-
                 "Early readmission predicted"
-
                 if prediction == 1
-
                 else "Early readmission not predicted"
-
             ),
 
             "early_readmission_probability": round(
@@ -345,7 +299,6 @@ def predict_readmission(request: PredictionRequest):
             ),
 
             "model": "Tuned Random Forest"
-
         }
 
     except Exception:
@@ -380,7 +333,6 @@ def explain_prediction(request: PredictionRequest):
             "classifier"
         ]
 
-
         # Apply training preprocessing
 
         transformed_data = preprocessor.transform(
@@ -391,13 +343,11 @@ def explain_prediction(request: PredictionRequest):
 
             transformed_data = transformed_data.toarray()
 
-
         # Retrieve encoded feature names
 
         transformed_names = (
             preprocessor.get_feature_names_out()
         )
-
 
         # Calculate SHAP values
 
@@ -408,7 +358,6 @@ def explain_prediction(request: PredictionRequest):
         shap_values = explainer.shap_values(
             transformed_data
         )
-
 
         # Select positive readmission class
 
@@ -436,23 +385,16 @@ def explain_prediction(request: PredictionRequest):
 
                 contributions = values[0]
 
-
         # Group encoded features
 
         grouped_contributions = {
-
             feature: 0.0
-
             for feature in FEATURES
-
         }
 
         for name, contribution in zip(
-
             transformed_names,
-
             contributions
-
         ):
 
             if name.startswith("num__"):
@@ -464,33 +406,21 @@ def explain_prediction(request: PredictionRequest):
                 encoded_name = name[len("cat__"):]
 
                 categorical_features = sorted(
-
                     preprocessor.transformers_[1][2],
-
                     key=len,
-
                     reverse=True
-
                 )
 
                 original_feature = next(
-
                     (
-
                         feature
-
                         for feature in categorical_features
-
                         if encoded_name == feature
-
                         or encoded_name.startswith(
                             feature + "_"
                         )
-
                     ),
-
                     None
-
                 )
 
             else:
@@ -503,53 +433,35 @@ def explain_prediction(request: PredictionRequest):
                     original_feature
                 ] += float(contribution)
 
-
         # Prepare explanation response
 
         explanations = [
-
             {
-
                 "feature": feature,
 
                 "shap_value": round(value, 6),
 
                 "direction": (
-
                     "increases predicted readmission probability"
-
                     if value > 0
-
                     else "decreases predicted readmission probability"
-
                     if value < 0
-
                     else "no contribution"
-
                 )
-
             }
 
             for feature, value in grouped_contributions.items()
-
         ]
 
         explanations.sort(
-
             key=lambda item: abs(item["shap_value"]),
-
             reverse=True
-
         )
 
         return {
-
             "model": "Tuned Random Forest",
-
             "explanation_method": "SHAP TreeExplainer",
-
             "top_features": explanations[:10]
-
         }
 
     except Exception:
@@ -557,11 +469,8 @@ def explain_prediction(request: PredictionRequest):
         logger.exception("SHAP explanation failed")
 
         raise HTTPException(
-
             status_code=400,
-
             detail="Unable to generate SHAP explanation."
-
         )
 
 
@@ -623,12 +532,9 @@ def risk_dashboard(request: PredictionRequest):
         "gauge_value": probability,
 
         "disclaimer": (
-
             "Risk categories are illustrative and "
             "are not clinically validated."
-
         )
-
     }
 
 
@@ -657,54 +563,35 @@ def download_report(request: PredictionRequest):
     buffer = BytesIO()
 
     document = SimpleDocTemplate(
-
         buffer,
-
         pagesize=(595, 842),
-
         rightMargin=45,
-
         leftMargin=45,
-
         topMargin=45,
-
         bottomMargin=45
-
     )
 
     styles = getSampleStyleSheet()
 
     elements = []
 
-
     # Report heading
 
     elements.append(
-
         Paragraph(
-
             "ReAdmit Care",
-
             styles["Title"]
-
         )
-
     )
 
     elements.append(
-
         Paragraph(
-
             "Hospital Readmission Prediction Report",
-
             styles["Heading2"]
-
         )
-
     )
 
     elements.append(Spacer(1, 15))
-
 
     # Report generation time
 
@@ -715,31 +602,20 @@ def download_report(request: PredictionRequest):
     )
 
     elements.append(
-
         Paragraph(
-
             f"Generated: {generated_at}",
-
             styles["Normal"]
-
         )
-
     )
 
     elements.append(
-
         Paragraph(
-
             "Authentication: Google Account Verified",
-
             styles["Normal"]
-
         )
-
     )
 
     elements.append(Spacer(1, 20))
-
 
     # Prediction summary
 
@@ -754,21 +630,15 @@ def download_report(request: PredictionRequest):
         ["Readmission Probability", f"{probability}%"],
 
         ["Illustrative Risk Level", risk_level]
-
     ]
 
     summary_table = Table(
-
         summary,
-
         colWidths=[190, 315],
-
         repeatRows=1
-
     )
 
     summary_table.setStyle(
-
         TableStyle([
 
             (
@@ -820,36 +690,26 @@ def download_report(request: PredictionRequest):
                 (-1, -1),
                 10
             )
-
         ])
-
     )
 
     elements.append(summary_table)
 
     elements.append(Spacer(1, 22))
 
-
     # Patient input features
 
     elements.append(
-
         Paragraph(
-
             "Patient Input Features",
-
             styles["Heading2"]
-
         )
-
     )
 
     elements.append(Spacer(1, 10))
 
     feature_rows = [
-
         ["Feature", "Value"]
-
     ]
 
     for feature in FEATURES:
@@ -859,37 +719,24 @@ def download_report(request: PredictionRequest):
         feature_rows.append([
 
             Paragraph(
-
                 escape(str(feature)),
-
                 styles["BodyText"]
-
             ),
 
             Paragraph(
-
                 escape(str(value)),
-
                 styles["BodyText"]
-
             )
-
         ])
 
     feature_table = Table(
-
         feature_rows,
-
         colWidths=[245, 260],
-
         repeatRows=1,
-
         hAlign="LEFT"
-
     )
 
     feature_table.setStyle(
-
         TableStyle([
 
             (
@@ -951,32 +798,23 @@ def download_report(request: PredictionRequest):
                 (-1, -1),
                 7
             )
-
         ])
-
     )
 
     elements.append(feature_table)
 
     elements.append(Spacer(1, 20))
 
-
     # Academic disclaimer
 
     elements.append(
-
         Paragraph(
-
             "Important Disclaimer",
-
             styles["Heading2"]
-
         )
-
     )
 
     elements.append(
-
         Paragraph(
 
             "This report is generated by an academic "
@@ -988,9 +826,7 @@ def download_report(request: PredictionRequest):
             "identity or physician credentials.",
 
             styles["BodyText"]
-
         )
-
     )
 
     document.build(elements)
@@ -1009,7 +845,23 @@ def download_report(request: PredictionRequest):
                 'attachment; filename="ReAdmit_Care_Report.pdf"',
 
             "Cache-Control": "no-store"
-
         }
-
     )
+
+
+# ==========================================
+# FRONTEND HOSTING
+# ==========================================
+
+FRONTEND_DIR = (
+    Path(__file__).resolve().parent / "frontend"
+)
+
+app.mount(
+    "/",
+    StaticFiles(
+        directory=str(FRONTEND_DIR),
+        html=True
+    ),
+    name="frontend"
+)

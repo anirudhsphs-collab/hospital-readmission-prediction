@@ -4,5 +4,8 @@ pandas
 scikit-learn==1.7.2
 joblib
 numpy
+shap
 reportlab==4.4.4
 firebase-admin
+google-auth
+requests

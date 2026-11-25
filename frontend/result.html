@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReAdmit Care | Results</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="sidebar"></div>
+
+<main class="main-content">
+
+    <div class="topbar">
+        <span>Assessment Results</span>
+        <span class="tag">Prediction Report</span>
+    </div>
+
+    <h1>Patient Assessment Report</h1>
+
+    <p id="patientHeading" class="subtitle"></p>
+
+    <div id="emptyResult" class="card" hidden>
+        <h2>No assessment available</h2>
+        <a href="assessment.html" class="btn">
+            Start Assessment
+        </a>
+    </div>
+
+    <div id="resultContent" hidden>
+
+        <section class="card result-card">
+
+            <div class="risk-circle" id="riskCircle">
+                <div class="risk-inner">
+                    <span id="probability">--%</span>
+                    <small>Estimated risk</small>
+                </div>
+            </div>
+
+            <div class="risk-description">
+                <h2 id="riskLevel"></h2>
+                <p id="predictionText"></p>
+                <p>Model: Tuned Random Forest</p>
+                <p>Prediction window: Within 30 days</p>
+                <small>Illustrative risk classification</small>
+            </div>
+
+        </section>
+
+        <div class="card-grid three">
+
+            <div class="card metric">
+                <h2 id="inpatientCount">0</h2>
+                <p>Inpatient Visits</p>
+            </div>
+
+            <div class="card metric">
+                <h2 id="emergencyCount">0</h2>
+                <p>Emergency Visits</p>
+            </div>
+
+            <div class="card metric">
+                <h2 id="outpatientCount">0</h2>
+                <p>Outpatient Visits</p>
+            </div>
+
+        </div>
+
+        <section class="card">
+
+            <h2>Key Influencing Factors</h2>
+
+            <p class="subtitle">
+                SHAP contributions calculated by the trained model.
+            </p>
+
+            <div class="legend">
+                <span class="increase">● Increases predicted risk</span>
+                <span class="decrease">● Decreases predicted risk</span>
+            </div>
+
+            <div id="shapResults"></div>
+
+        </section>
+
+        <section class="card">
+
+            <h2>Assessment Information</h2>
+
+            <div id="assessmentSummary"></div>
+
+            <div class="notice">
+                The prediction may depend on assumed clinical inputs.
+                Risk categories are illustrative and are not
+                clinically validated.
+            </div>
+
+            <div class="button-row">
+
+                <button id="downloadReport" class="btn">
+                    ↓ Download PDF Report
+                </button>
+
+                <button id="copyResult" class="btn secondary">
+                    Copy Result
+                </button>
+
+                <a href="assessment.html" class="btn secondary">
+                    New Assessment
+                </a>
+
+            </div>
+
+            <p id="reportStatus" role="status"></p>
+
+        </section>
+
+    </div>
+
+    <footer>
+        Academic Machine Learning Project |
+        Not a substitute for professional medical judgment.
+    </footer>
+
+</main>
+
+<script src="script.js" type="module"></script>
+
+</body>
+</html>

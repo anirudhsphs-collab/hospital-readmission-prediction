@@ -1,5 +1,7 @@
 
-const API = "http://127.0.0.1:8000";
+const API = window.location.port === "5500"
+    ? "http://127.0.0.1:8000"
+    : window.location.origin;
 const $ = id => document.getElementById(id);
 
 const page = location.pathname.split("/").pop() || "index.html";

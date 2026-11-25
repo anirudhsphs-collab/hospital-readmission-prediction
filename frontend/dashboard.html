@@ -1,0 +1,508 @@
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>ReAdmit Care | My Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+
+</head>
+
+<body>
+
+    <div id="sidebar"></div>
+
+    <main class="main-content personal-dashboard">
+
+        <!-- LOADING SCREEN -->
+
+        <div id="dashboardLoading" class="card">
+            <p>Loading your personal dashboard...</p>
+        </div>
+
+        <div id="dashboardError"
+             class="card error-text"
+             hidden>
+        </div>
+
+        <div id="dashboardContent" hidden>
+
+            <!-- HEADER -->
+
+            <header class="personal-header">
+
+                <div class="welcome-section">
+
+                    <div class="profile-avatar"
+                         id="profileAvatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+
+                    <div>
+
+                        <h1 id="welcomeName">
+                            Welcome back!
+                        </h1>
+
+                        <p class="verified-label">
+
+                            <i class="fa-solid fa-circle-check"></i>
+
+                            Google Account Verified
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <button id="dashboardLogout"
+                        class="dashboard-logout">
+
+                    <i class="fa-solid fa-right-from-bracket"></i>
+
+                    Sign Out
+
+                </button>
+
+            </header>
+
+
+            <!-- SUMMARY CARDS -->
+
+            <section class="personal-stats">
+
+                <div class="personal-stat-card">
+
+                    <div class="stat-icon teal-icon">
+
+                        <i class="fa-solid fa-clipboard-list"></i>
+
+                    </div>
+
+                    <div>
+
+                        <p>Total Assessments</p>
+
+                        <h2 id="totalAssessments">0</h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="personal-stat-card">
+
+                    <div class="stat-icon blue-icon">
+
+                        <i class="fa-solid fa-heart-pulse"></i>
+
+                    </div>
+
+                    <div>
+
+                        <p>Latest Estimated Risk</p>
+
+                        <h2 id="latestRisk">--</h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="personal-stat-card">
+
+                    <div class="stat-icon green-icon">
+
+                        <i class="fa-solid fa-shield-heart"></i>
+
+                    </div>
+
+                    <div>
+
+                        <p>Latest Risk Level</p>
+
+                        <h2 id="latestRiskLevel">
+                            No Data
+                        </h2>
+
+                    </div>
+
+                </div>
+
+
+                <div class="personal-stat-card">
+
+                    <div class="stat-icon purple-icon">
+
+                        <i class="fa-solid fa-file-medical"></i>
+
+                    </div>
+
+                    <div>
+
+                        <p>Saved Assessments</p>
+
+                        <h2 id="savedReports">0</h2>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- GRAPH AND LATEST PREDICTION -->
+
+            <section class="personal-overview">
+
+                <div class="card history-chart-card">
+
+                    <h2>
+
+                        <i class="fa-solid fa-chart-line"></i>
+
+                        My Readmission Risk History
+
+                    </h2>
+
+                    <div class="history-chart-container">
+
+                        <canvas id="riskHistoryChart"></canvas>
+
+                        <p id="emptyChart" hidden>
+                            Your risk history will appear
+                            after your first assessment.
+                        </p>
+
+                    </div>
+
+                    <small>
+                        Estimated model probabilities,
+                        not a measure of clinical recovery.
+                    </small>
+
+                </div>
+
+
+                <div class="card latest-prediction-card"
+                     id="latestPredictionCard">
+
+                    <div class="latest-prediction-icon">
+
+                        <i class="fa-solid fa-heart-pulse"></i>
+
+                    </div>
+
+                    <h2 id="predictionRiskLevel">
+                        No Assessment Yet
+                    </h2>
+
+                    <p id="latestPredictionText">
+                        Complete your first assessment
+                        to view your prediction.
+                    </p>
+
+                    <hr>
+
+                    <p>
+                        <strong>Model:</strong>
+                        Tuned Random Forest
+                    </p>
+
+                    <p>
+                        <strong>Prediction window:</strong>
+                        Within 30 days
+                    </p>
+
+                    <a href="assessment.html"
+                       class="dashboard-primary-button">
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        New Assessment
+
+                    </a>
+
+                </div>
+
+            </section>
+
+
+            <!-- PREVIOUS ASSESSMENTS -->
+
+            <section class="card personal-history-card"
+                     id="myHistory">
+
+                <div class="section-heading">
+
+                    <h2>
+
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+
+                        Previous Assessments
+
+                    </h2>
+
+                    <select id="historyFilter">
+
+                        <option value="All">
+                            All Risk Levels
+                        </option>
+
+                        <option value="Low Risk">
+                            Low Risk
+                        </option>
+
+                        <option value="Moderate Risk">
+                            Moderate Risk
+                        </option>
+
+                        <option value="High Risk">
+                            High Risk
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="history-table-wrapper">
+
+                    <table class="personal-history-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Date</th>
+
+                                <th>Age Group</th>
+
+                                <th>Gender</th>
+
+                                <th>Hospital Stay</th>
+
+                                <th>Medications</th>
+
+                                <th>Risk Probability</th>
+
+                                <th>Risk Level</th>
+
+                                <th>Actions</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody id="historyTableBody">
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+
+                <div id="emptyHistory"
+                     class="empty-history"
+                     hidden>
+
+                    <i class="fa-solid fa-folder-open"></i>
+
+                    <h3>No assessments found</h3>
+
+                    <p>
+                        Your saved assessment history
+                        will appear here.
+                    </p>
+
+                </div>
+
+            </section>
+
+
+            <!-- PROFILE AND PRIVACY -->
+
+            <section class="personal-profile-grid">
+
+                <div class="card personal-profile-card"
+                     id="myProfile">
+
+                    <h2>
+
+                        <i class="fa-solid fa-id-card"></i>
+
+                        Your Profile Information
+
+                    </h2>
+
+                    <div class="profile-information">
+
+                        <div class="large-profile-avatar"
+                             id="largeProfileAvatar">
+
+                            <i class="fa-solid fa-user"></i>
+
+                        </div>
+
+                        <div class="profile-details">
+
+                            <p>
+
+                                <strong>Name:</strong>
+
+                                <span id="profileName">--</span>
+
+                            </p>
+
+                            <p>
+
+                                <strong>Email:</strong>
+
+                                <span id="profileEmail">--</span>
+
+                            </p>
+
+                            <p>
+
+                                <strong>Account:</strong>
+
+                                Google Account
+
+                            </p>
+
+                            <p>
+
+                                <strong>Access:</strong>
+
+                                Personal Records Only
+
+                            </p>
+
+                            <p>
+
+                                <strong>Member Since:</strong>
+
+                                <span id="memberSince">--</span>
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div class="card privacy-card">
+
+                    <div class="privacy-icon">
+
+                        <i class="fa-solid fa-shield-halved"></i>
+
+                    </div>
+
+                    <div>
+
+                        <h2>Your Privacy is Our Priority</h2>
+
+                        <p>
+
+                            Your personal assessment history
+                            is restricted to your authenticated
+                            Google account.
+
+                        </p>
+
+                        <p>
+
+                            Use fictional clinical information
+                            for this academic demonstration.
+
+                        </p>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- ASSESSMENT DETAILS POPUP -->
+
+            <dialog id="assessmentModal"
+                    class="assessment-modal">
+
+                <div class="modal-header">
+
+                    <h2>Saved Assessment Details</h2>
+
+                    <button id="closeModal"
+                            aria-label="Close details">
+
+                        <i class="fa-solid fa-xmark"></i>
+
+                    </button>
+
+                </div>
+
+                <div id="savedAssessmentDetails"></div>
+
+                <div class="modal-actions">
+
+                    <button id="openSavedResult"
+                            class="dashboard-primary-button">
+
+                        <i class="fa-solid fa-eye"></i>
+
+                        View Full Result
+
+                    </button>
+
+                    <button id="deleteSavedAssessment"
+                            class="dashboard-delete-button">
+
+                        <i class="fa-solid fa-trash"></i>
+
+                        Delete Record
+
+                    </button>
+
+                </div>
+
+            </dialog>
+
+
+            <!-- FOOTER -->
+
+            <footer class="dashboard-footer">
+
+                Academic Machine Learning Project |
+                Not a substitute for professional medical judgment.
+
+            </footer>
+
+        </div>
+
+    </main>
+
+    <script src="script.js" type="module"></script>
+
+    <script src="dashboard.js" type="module"></script>
+
+</body>
+
+</html>
